@@ -22,10 +22,10 @@ public class GoodsRecordController {
     private goodsservice goodsservice;
 
     @PostMapping("/listPage")
-    public Result<Page<GoodsRecord>> listpage(@RequestBody GoodsRecordQueryDTO goodsRecordQueryDTO){
+    public Result<Page<GoodsRecord>> listpage(@RequestBody GoodsRecordQueryDTO goodsRecordQueryDTO) {
         Page<GoodsRecord> page = new Page<>(goodsRecordQueryDTO.getCurrentPage(), goodsRecordQueryDTO.getPageSize());
         LambdaQueryWrapper<GoodsRecord> wrapper = new LambdaQueryWrapper<>();//分页查询语句前置，抄过去就行了,记得改Goods为实体类名
-        if(goodsRecordQueryDTO.getName() != null){
+        if (goodsRecordQueryDTO.getName() != null) {
             wrapper.like(GoodsRecord::getGoodsName, goodsRecordQueryDTO.getName());
         }
         wrapper.orderByDesc(GoodsRecord::getCreatetime);

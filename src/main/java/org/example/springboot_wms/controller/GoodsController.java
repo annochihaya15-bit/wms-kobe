@@ -33,73 +33,76 @@ public class GoodsController {
     private goodsservice goodsservice;
     @Autowired
     private GoodsMapper goodsMapper;
-@Transactional
-@PostMapping("/save")
-    public Result<Boolean> save(@RequestBody Goods goods, HttpSession session){
-    user Loginuser=(user) session.getAttribute("loginUser");
-    String operator=Loginuser.getName();
-if(goods.getId()==null){
-    GoodsRecord goodsRecord=new GoodsRecord();
-    goodsRecord.setGoodsName(goods.getName());
-    goodsRecord.setCount(goods.getCount());
-    goodsRecord.setAction("初始化入库");
-    goodsRecord.setAdminName(operator);
-    goodsRecord.setCreatetime(java.time.LocalDateTime.now());
-    goodsRecordService.save(goodsRecord);
-}else{
-    // === 情况B：修改库存 ===
-    // 关键点：我们要先查出数据库里"旧"的数据，跟前端传来的"新"数据比对
-    Goods oldGoods = goodsservice.getById(goods.getId());//新数据
-    int diffs=goods.getCount() - oldGoods.getCount();
-    if(diffs!=0){
-        GoodsRecord goodsRecord=new GoodsRecord();
-        goodsRecord.setGoodsName(goods.getName());
-        goodsRecord.setCreatetime(java.time.LocalDateTime.now());
-        if(diffs>0){
-            goodsRecord.setAction("入库");
-            goodsRecord.setCount(Math.abs(diffs));//记录入库数量
+
+    @Transactional
+    @PostMapping("/save")
+    public Result<Boolean> save(@RequestBody Goods goods, HttpSession session) {
+        user Loginuser = (user) session.getAttribute("loginUser");
+        String operator = Loginuser.getName();
+        if (goods.getId() == null) {
+            GoodsRecord goodsRecord = new GoodsRecord();
+            goodsRecord.setGoodsName(goods.getName());
+            goodsRecord.setCount(goods.getCount());
+            goodsRecord.setAction("初始化入库");
+            goodsRecord.setAdminName(operator);
+            goodsRecord.setCreatetime(java.time.LocalDateTime.now());
+            goodsRecordService.save(goodsRecord);
+        } else {
+            // === 情况B：修改库存 ===
+            // 关键点：我们要先查出数据库里"旧"的数据，跟前端传来的"新"数据比对
+            Goods oldGoods = goodsservice.getById(goods.getId());//新数据
+            int diffs = goods.getCount() - oldGoods.getCount();
+            if (diffs != 0) {
+                GoodsRecord goodsRecord = new GoodsRecord();
+                goodsRecord.setGoodsName(goods.getName());
+                goodsRecord.setCreatetime(java.time.LocalDateTime.now());
+                if (diffs > 0) {
+                    goodsRecord.setAction("入库");
+                    goodsRecord.setCount(Math.abs(diffs));//记录入库数量
+                } else {
+                    goodsRecord.setAction("出库");
+                    goodsRecord.setCount(Math.abs(diffs));
+                }
+                goodsRecord.setAdminName(operator);
+                goodsRecordService.save(goodsRecord);
+            }
         }
-        else{goodsRecord.setAction("出库");
-            goodsRecord.setCount(Math.abs(diffs));
+        boolean issucesss = goodsservice.saveOrUpdate(goods);
+        if (issucesss) {
+            return Result.success("保存商品成功,并记录流水");
+        } else {
+            return Result.error("保存商品失败");
         }
-        goodsRecord.setAdminName(operator);
-        goodsRecordService.save(goodsRecord);
     }
-}
-    boolean issucesss=goodsservice.saveOrUpdate(goods);
-    if(issucesss){
-        return Result.success("保存商品成功,并记录流水");
-    }
-    else{
-        return Result.error("保存商品失败");
-    }
-}/**
+
+    /**
      * 删除物品
      * 1. 开启事务 @Transactional，防止删除成功但日志记录失败
      * 2. 执行逻辑删除
      * 3. 记录操作日志
      */
-@Transactional
-@PostMapping("/delete")
-    public Result<Boolean> delete(int id){
-    boolean issucesss=goodsservice.removeById(id);
-    if(issucesss){
-        return Result.success("删除商品成功");
+    @Transactional
+    @PostMapping("/delete")
+    public Result<Boolean> delete(int id) {
+        boolean issucesss = goodsservice.removeById(id);
+        if (issucesss) {
+            return Result.success("删除商品成功");
+        } else {
+            return Result.error("删除商品失败");
+        }
     }
-    else{
-        return Result.error("删除商品失败");
+
+    @PostMapping("/listPage")
+    public Result<Page<Goods>> listpage(@RequestBody GoodsQueryDTO goodsQueryDTO) {
+        Page<Goods> page = new Page<>(goodsQueryDTO.getCurrentPage(), goodsQueryDTO.getPageSize());
+        LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();//分页查询语句前置，抄过去就行了,记得改Goods为实体类名
+        if (goodsQueryDTO.getName() != null) {
+            wrapper.like(Goods::getName, goodsQueryDTO.getName());
+        }
+        Page<Goods> resultPage = goodsservice.page(page, wrapper);// 3. 执行分页查询
+        return Result.success(resultPage);
     }
-}
-@PostMapping("/listPage")
-    public Result<Page<Goods>> listpage(@RequestBody GoodsQueryDTO goodsQueryDTO){
-    Page<Goods> page = new Page<>(goodsQueryDTO.getCurrentPage(), goodsQueryDTO.getPageSize());
-    LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();//分页查询语句前置，抄过去就行了,记得改Goods为实体类名
-    if(goodsQueryDTO.getName() != null){
-        wrapper.like(Goods::getName, goodsQueryDTO.getName());
-    }
-    Page<Goods> resultPage = goodsservice.page(page, wrapper);// 3. 执行分页查询
-    return Result.success(resultPage);
-}
+
     //    后端去数据库把所有物品查出来，转换成 Excel 格式，然后通过网络“流”直接发给浏览器，让浏览器弹出一个下载框。
     @GetMapping("/export")
     public void exprot(HttpServletResponse response) throws IOException {
@@ -113,7 +116,7 @@ if(goods.getId()==null){
 // Content-Disposition: attachment 意思是“作为附件下载”，而不是在浏览器里直接打开
 // filename=... 指定了下载下来的文件名
         response.setHeader("Content-Disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
-        List<Goods> list=goodsservice.list();
+        List<Goods> list = goodsservice.list();
         // EasyExcel.write(...) 开始写 Excel
 // response.getOutputStream(): 这是通向浏览器的“管道”，数据写进去，浏览器就收到了
 // Goods.class: 告诉 EasyExcel 用哪个实体类做模板（读取里面的 @ExcelProperty 注解来生成表头）
@@ -121,17 +124,18 @@ if(goods.getId()==null){
                 .sheet("库存数据") // Excel 下方那个 Sheet 页签的名字
                 .doWrite(list);   // 把刚才查出来的 list 数据填进去
     }
-@GetMapping("/stats")
-    public Result<Map<String, Object>> stats(){
-   Map<String, Object> map =new HashMap<>();
-    // 2. 查询总库存数
-    Integer totalStock=goodsMapper.selctTotalCount();
+
+    @GetMapping("/stats")
+    public Result<Map<String, Object>> stats() {
+        Map<String, Object> map = new HashMap<>();
+        // 2. 查询总库存数
+        Integer totalStock = goodsMapper.selctTotalCount();
 // 防止数据库是空的返回 null，导致前端报错，做一个判断
-    map.put("totalStock", totalStock == null ? 0 : totalStock);
-    List<Map<String, Object>> categoryData=goodsMapper.selectTotalCountByType();
-    map.put("categoryData", categoryData);
-    return Result.success(map);
-}
+        map.put("totalStock", totalStock == null ? 0 : totalStock);
+        List<Map<String, Object>> categoryData = goodsMapper.selectTotalCountByType();
+        map.put("categoryData", categoryData);
+        return Result.success(map);
+    }
 //map.put(K, V)：
 //    K (Key) = 数据的名字（前端要靠这个名字来取值）。
 //    V (Value) = 数据的内容（具体的数字、字符串或列表）。
