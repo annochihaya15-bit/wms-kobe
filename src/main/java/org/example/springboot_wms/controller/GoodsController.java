@@ -73,7 +73,12 @@ if(goods.getId()==null){
     else{
         return Result.error("保存商品失败");
     }
-}
+}/**
+     * 删除物品
+     * 1. 开启事务 @Transactional，防止删除成功但日志记录失败
+     * 2. 执行逻辑删除
+     * 3. 记录操作日志
+     */
 @Transactional
 @PostMapping("/delete")
     public Result<Boolean> delete(int id){
