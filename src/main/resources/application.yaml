@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mybatis_plus_test?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: jj312312  # 替换为你的实际密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    mybatis-plus:
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        # 日志级别配置（核心：关闭DEBUG，保留INFO及以上）
+        logging:
+          level:
+            root: INFO  # 全局基础级别
+            # 屏蔽Spring框架的INFO日志
+            org.springframework: WARN
+            # 屏蔽Tomcat/Catalina的INFO日志
+            org.apache.tomcat: WARN
+            org.apache.catalina: WARN
+            # 保留MyBatis-Plus的INFO（不影响艺术字体）
+            com.baomidou.mybatisplus: INFO
+            # 保留你自己业务代码的INFO
+            org.example.springboot_wms: INFO
+
+  # 文件上传配置（新增，对应头像上传）
+  servlet:
+    multipart:
+      max-file-size: 10MB # 单个文件最大10MB（避免上传大头像报错）
+      max-request-size: 10MB # 单次请求最大10MB
+  web:
+    resources:
+          static-locations:
+            - classpath:static/  # 原有静态资源目录
+            - file:D:/avatar_upload/  # 映射外部头像目录（和上面的path一致）
+
+# 头像上传路径配置（核心，替换之前的properties配置）
+upload:
+  avatar:
+    # Windows系统路径（直接复制用）
+    path:  D:/avatar_upload/
+    # 前端访问头像的前缀（不变）
+    url: /uploads/avatar/
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: delete
+      logic-not-delete-value: 0
+      logic-delete-value: 1
+# 关键：让Spring Boot映射外部目录，前端能访问上传的头像

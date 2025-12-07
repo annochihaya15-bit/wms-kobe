@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--配置文件头-->
+<mapper namespace="org.example.springboot_wms.mapper.usermapper">
+<resultMap id="UserResultMap" type="org.example.springboot_wms.domain.user">
+    <id property="id" column="id"/>
+    <result property="name" column="name"/>
+    <result property="age" column="age"/>
+    <result property="password" column="password"/>
+    <result property="sex" column="sex"/>
+    <result property="phone" column="phone"/>
+    <result property="roleid" column="role_id"/>
+    <result property="isvalid" column="is_valid"/>
+</resultMap>
+    <!-- SQL 语句将在这里定义 -->
+    <select id="listAll" resultMap="UserResultMap">--   此处id与java类中的方法名一致
+select *from user
+    </select>
+
+</mapper>
