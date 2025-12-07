@@ -24,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/user")
 public class userController {
+    private static final String USER_KEY = "loginUser";
     @Value("${upload.avatar.path}")
     private String avatarUploadPath; // 本地存储路径
     @Value("${upload.avatar.url}")
@@ -75,8 +76,8 @@ public class userController {
     @AdminRequired
     @PostMapping("/mod")
     public Result<Object> mod(@RequestBody user user, HttpSession session) {
-        user loginUser = (user) session.getAttribute("loginUser");
-        int loginid = loginUser.getRoleid();
+        user USER_KEY = (user) session.getAttribute("USER_KEY");
+        int loginid = USER_KEY.getRoleid();
         int targetid = user.getRoleid();
         if (loginid == 2 && loginid != targetid) {
             return Result.error("请v我50解锁管理员权限");
@@ -158,7 +159,7 @@ public class userController {
             return Result.error("密码错误");
         }
         user.setPassword(null);
-        session.setAttribute("loginUser", user); // 键"loginUser"用于后续获取
+        session.setAttribute("USER_KEY", user); // 键"USER_KEY"用于后续获取
         return Result.success(user);
     }
 
@@ -213,6 +214,7 @@ public class userController {
             return Result.error("头像上传失败：" + e.getMessage());
         }
     }
+
 }
 
 //        UUID.randomUUID()：生成唯一文件名，避免上传同名图片覆盖；
