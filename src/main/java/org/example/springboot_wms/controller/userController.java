@@ -58,7 +58,7 @@ public class userController {
 
     @Transactional
     @PostMapping("/save")
-    public Result<Boolean> save(@RequestBody user user) {
+    public Result<Boolean> save(@RequestBody user user) throws Throwable {
         try {
             boolean isSuccess = userservice.save(user);
             if (isSuccess) {
@@ -68,7 +68,7 @@ public class userController {
             }
         } catch (Exception e) {
             e.printStackTrace(); // 打印异常日志，方便排查
-            return Result.error(500, "保存失败：" + e.getMessage());
+            throw Result.error(500, "保存失败：" + e.getMessage());
         }
     }
 
