@@ -56,20 +56,16 @@ public class userController {
         return Result.success(userList);
     }
 
-    @Transactional
+    @Transactional//事务会自动回滚
     @PostMapping("/save")
-    public Result<Boolean> save(@RequestBody user user) throws Throwable {
-        try {
+    public Result<Boolean> save(@RequestBody user user) {
             boolean isSuccess = userservice.save(user);
             if (isSuccess) {
                 return Result.success("保存用户成功");
             } else {
                 return Result.error("保存用户失败");
             }
-        } catch (Exception e) {
-            e.printStackTrace(); // 打印异常日志，方便排查
-            throw Result.error(500, "保存失败：" + e.getMessage());
-        }
+
     }
 
     @Transactional
