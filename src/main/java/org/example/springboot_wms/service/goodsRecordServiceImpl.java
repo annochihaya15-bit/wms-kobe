@@ -7,4 +7,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class goodsRecordServiceImpl extends ServiceImpl<goodsRecordMapper,GoodsRecord> implements goodsRecordService {
+
 }

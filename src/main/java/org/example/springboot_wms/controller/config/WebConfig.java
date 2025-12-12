@@ -3,13 +3,14 @@ package org.example.springboot_wms.controller.config;
 import org.example.springboot_wms.interceptor.AdminInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+
 
     // 读取你在 application.yml 里配置的上传路径
     // 如果你没配，这里请手动写死你的图片保存文件夹，比如 "D:/avatar_upload/"

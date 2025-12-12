@@ -23,12 +23,16 @@ public class AdminInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("=== 进入拦截器 ===");
+        System.out.println("当前请求路径: " + request.getRequestURI());
+        AdminRequired adminRequired = null;
+        System.out.println("是否获取到注解: " + (adminRequired != null));
         // 1. 如果不是映射到Controller方法的请求（例如静态资源），直接放行
         if (!(handler instanceof HandlerMethod)) {
             return true;
         }
-        user loginUser = (user) request.getSession().getAttribute("loginUser");
-        if (loginUser==null) {
+        user loginUser = (user) request.getSession().getAttribute("USER_KEY");
+        if (loginUser == null) {
             return returnJson(response, "用户未登录，请先登录");
         }
 
@@ -36,12 +40,10 @@ public class AdminInterceptor implements HandlerInterceptor {
         HandlerMethod handlerMethod = (HandlerMethod) handler;
 
         // 2. 检查方法上是否有 @AdminRequired 注解
-        AdminRequired adminRequired = handlerMethod.getMethodAnnotation(AdminRequired.class);
+        adminRequired = handlerMethod.getMethodAnnotation(AdminRequired.class);
         if (adminRequired == null) {
             return true; // 没有注解，说明该接口不需要管理员权限，放行
         }
-
-
 
 
         // 4. 校验权限

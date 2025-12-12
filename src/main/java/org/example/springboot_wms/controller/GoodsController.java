@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpSession;
 import org.example.springboot_wms.common.GoodsQueryDTO;
 import org.example.springboot_wms.common.Result;
 import org.example.springboot_wms.domain.Goods;
-import org.example.springboot_wms.domain.GoodsRecord;
 import org.example.springboot_wms.domain.user;
 import org.example.springboot_wms.mapper.GoodsMapper;
 import org.example.springboot_wms.service.goodsRecordService;
@@ -39,48 +38,9 @@ public class GoodsController {
     public Result<Boolean> save(@RequestBody Goods goods, HttpSession session) {
         user Loginuser = (user) session.getAttribute("loginUser");
         String operator = Loginuser.getName();
-        if (goods.getId() == null) {
-            GoodsRecord goodsRecord = new GoodsRecord();
-            goodsRecord.setGoodsName(goods.getName());
-            goodsRecord.setCount(goods.getCount());
-            goodsRecord.setAction("初始化入库");
-            goodsRecord.setAdminName(operator);
-            goodsRecord.setCreatetime(java.time.LocalDateTime.now());
-            goodsRecordService.save(goodsRecord);
-        } else {
-            // === 情况B：修改库存 ===
-            // 关键点：我们要先查出数据库里"旧"的数据，跟前端传来的"新"数据比对
-            Goods oldGoods = goodsservice.getById(goods.getId());//新数据
-            int diffs = goods.getCount() - oldGoods.getCount();
-            if (diffs != 0) {
-                GoodsRecord goodsRecord = new GoodsRecord();
-                goodsRecord.setGoodsName(goods.getName());
-                goodsRecord.setCreatetime(java.time.LocalDateTime.now());
-                if (diffs > 0) {
-                    goodsRecord.setAction("入库");
-                    goodsRecord.setCount(Math.abs(diffs));//记录入库数量
-                } else {
-                    goodsRecord.setAction("出库");
-                    goodsRecord.setCount(Math.abs(diffs));
-                }
-                goodsRecord.setAdminName(operator);
-                goodsRecordService.save(goodsRecord);
-            }
-        }
-        boolean issucesss = goodsservice.saveOrUpdate(goods);
-        if (issucesss) {
-            return Result.success("保存商品成功,并记录流水");
-        } else {
-            return Result.error("保存商品失败");
-        }
+        goodsservice.saveGoodsRecord(goods, operator);
+        return Result.success("保存成功");
     }
-
-    /**
-     * 删除物品
-     * 1. 开启事务 @Transactional，防止删除成功但日志记录失败
-     * 2. 执行逻辑删除
-     * 3. 记录操作日志
-     */
     @Transactional
     @PostMapping("/delete")
     public Result<Boolean> delete(int id) {

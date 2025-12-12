@@ -15,10 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 
 @RestController
@@ -72,30 +69,16 @@ public class userController {
     @AdminRequired
     @PostMapping("/mod")
     public Result<Object> mod(@RequestBody user user, HttpSession session) {
-        user USER_KEY = (user) session.getAttribute("USER_KEY");
-        int loginid = USER_KEY.getRoleid();
-        int targetid = user.getRoleid();
-        if (loginid == 2 && loginid != targetid) {
-            return Result.error("请v我50解锁管理员权限");
-        }
-        boolean isSuccess = userservice.updateById(user);
-        if (isSuccess) {
+      userservice.moduser( user, session);
             return Result.success("修改成功");
-        } else {
-            return Result.error("修改失败");
-        }
     }
 
     @Transactional
     @AdminRequired
     @GetMapping("/delete")
-    public Object delete(int id) {
-        boolean isSuccess = userservice.removeById(id);
-        if (isSuccess) {
+    public Object delete(int id,HttpSession  session) {
+
             return Result.success("删除用户成功");
-        } else {
-            return Result.error("删除用户失败");
-        }
     }
 
     // 修正后的搜索方法
@@ -144,17 +127,7 @@ public class userController {
 
     @PostMapping("/login")
     public Result<user> login(@RequestBody LoginDTO loginDTO, HttpSession session) {
-        LambdaQueryWrapper<user> wrapper = new LambdaQueryWrapper<>();//查询语句前置
-        wrapper.eq(user::getName, loginDTO.getUsername());
-        user user = userservice.getOne(wrapper);
-        if (user == null) {
-            return Result.error("用户不存在");
-        }
-        boolean passeordMatch = user.getPassword().equals(loginDTO.getPassword());//匹配密码
-        if (!passeordMatch) {
-            return Result.error("密码错误");
-        }
-        user.setPassword(null);
+        user user = userservice.login(loginDTO);
         session.setAttribute("USER_KEY", user); // 键"USER_KEY"用于后续获取
         return Result.success(user);
     }
@@ -174,41 +147,13 @@ public class userController {
     }
 
     @Transactional
-    @AdminRequired
     @PostMapping("/uploadAvatar")
     public Result<String> uploadAvatar(
             @RequestParam("file") MultipartFile file,
             @RequestParam("userId") Integer userId
     ) {
-        // 1. 基础校验（保留）
-        if (file.isEmpty()) return Result.error("请选择要上传的头像");
-        user user = userservice.getById(userId);
-        if (user == null) return Result.error("用户不存在");
-
-        // 2. 读取配置的绝对路径（无需动态拼接，直接用）
-        File uploadDir = new File(avatarUploadPath);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs(); // 自动创建（保险，手动建了也没关系）
-        }
-
-        // 3. 文件名+保存（原有逻辑不变）
-        String originalFileName = file.getOriginalFilename();
-        String fileSuffix = originalFileName.substring(originalFileName.lastIndexOf("."));
-        String newFileName = UUID.randomUUID().toString() + fileSuffix;
-
-        try {
-            File destFile = new File(avatarUploadPath + newFileName);
-            file.transferTo(destFile); // 保存到D:/avatar_upload/
-
-            // 4. 前端访问路径（不变，还是/uploads/avatar/xxx.jpg）
-            String avatarUrl = avatarUrlPrefix + newFileName;
-            user.setAvatar(avatarUrl);
-            userservice.updateById(user);
-
-            return Result.success("头像上传成功", avatarUrl);
-        } catch (IOException e) {
-            return Result.error("头像上传失败：" + e.getMessage());
-        }
+        String newAvatarUrl = userservice.uploadAvatar(file, userId);
+        return Result.success("上传成功", newAvatarUrl);
     }
 
 }
